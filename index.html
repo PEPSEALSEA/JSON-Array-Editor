@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Array Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a0a0a 50%, #2d1b3d 100%);
+            color: #e8d5d5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 0;
+            background: rgba(220, 20, 60, 0.1);
+            border-radius: 20px;
+            border: 1px solid rgba(220, 20, 60, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, #ff6b9d, #dc143c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #b8a5a5;
+            font-size: 1.1rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #dc143c, #8b0000);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(220, 20, 60, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 20, 60, 0.4);
+            background: linear-gradient(45deg, #ff1744, #b71c1c);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #4a0e4e, #2d1b3d);
+            box-shadow: 0 4px 15px rgba(74, 14, 78, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(45deg, #6a1b9a, #4a148c);
+            box-shadow: 0 6px 20px rgba(106, 27, 154, 0.4);
+        }
+
+        .json-input {
+            width: 100%;
+            min-height: 120px;
+            background: rgba(30, 30, 30, 0.8);
+            border: 2px solid rgba(220, 20, 60, 0.3);
+            border-radius: 10px;
+            color: #e8d5d5;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            margin-bottom: 20px;
+        }
+
+        .json-input:focus {
+            outline: none;
+            border-color: #dc143c;
+            box-shadow: 0 0 10px rgba(220, 20, 60, 0.5);
+        }
+
+        .array-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .array-item {
+            background: rgba(30, 30, 30, 0.9);
+            border: 1px solid rgba(220, 20, 60, 0.2);
+            border-radius: 15px;
+            padding: 25px;
+            transition: all 0.3s ease;
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+
+        .array-item:hover {
+            transform: translateY(-5px);
+            border-color: rgba(220, 20, 60, 0.5);
+            box-shadow: 0 10px 25px rgba(220, 20, 60, 0.2);
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .item-index {
+            background: linear-gradient(45deg, #dc143c, #8b0000);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .delete-btn {
+            background: linear-gradient(45deg, #d32f2f, #b71c1c);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+            transform: scale(1.05);
+        }
+
+        .field-group {
+            margin-bottom: 15px;
+        }
+
+        .field-label {
+            display: block;
+            color: #ff6b9d;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .field-input {
+            width: 100%;
+            background: rgba(50, 50, 50, 0.8);
+            border: 1px solid rgba(220, 20, 60, 0.3);
+            border-radius: 8px;
+            color: #e8d5d5;
+            padding: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .field-input:focus {
+            outline: none;
+            border-color: #dc143c;
+            box-shadow: 0 0 8px rgba(220, 20, 60, 0.3);
+        }
+
+        .preview-image {
+            max-width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 2px solid rgba(220, 20, 60, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .preview-image:hover {
+            border-color: rgba(220, 20, 60, 0.6);
+            transform: scale(1.02);
+        }
+
+        .image-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .image-popup.active {
+            display: flex;
+        }
+
+        .popup-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .popup-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 10px;
+            box-shadow: 0 20px 40px rgba(220, 20, 60, 0.3);
+        }
+
+        .popup-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(220, 20, 60, 0.8);
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .popup-nav:hover {
+            background: rgba(220, 20, 60, 1);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .popup-prev {
+            left: -70px;
+        }
+
+        .popup-next {
+            right: -70px;
+        }
+
+        .popup-close {
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            background: rgba(220, 20, 60, 0.8);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .popup-close:hover {
+            background: rgba(220, 20, 60, 1);
+            transform: scale(1.1);
+        }
+
+        .popup-info {
+            position: absolute;
+            bottom: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #e8d5d5;
+            text-align: center;
+            background: rgba(30, 30, 30, 0.8);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .add-item-btn {
+            background: rgba(220, 20, 60, 0.1);
+            border: 2px dashed rgba(220, 20, 60, 0.5);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .add-item-btn:hover {
+            background: rgba(220, 20, 60, 0.2);
+            border-color: rgba(220, 20, 60, 0.7);
+            transform: translateY(-2px);
+        }
+
+        .add-item {
+            background: rgba(220, 20, 60, 0.1);
+            border: 2px dashed rgba(220, 20, 60, 0.5);
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            grid-column: 1 / -1;
+        }
+
+        .add-item:hover {
+            background: rgba(220, 20, 60, 0.2);
+            border-color: rgba(220, 20, 60, 0.7);
+            transform: translateY(-2px);
+        }
+
+        .add-icon {
+            font-size: 3rem;
+            color: #dc143c;
+            margin-bottom: 15px;
+        }
+
+        .add-text {
+            color: #ff6b9d;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .output-section {
+            margin-top: 40px;
+            padding: 25px;
+            background: rgba(30, 30, 30, 0.9);
+            border-radius: 15px;
+            border: 1px solid rgba(220, 20, 60, 0.2);
+        }
+
+        .output-section h3 {
+            color: #ff6b9d;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .json-output {
+            background: rgba(20, 20, 20, 0.9);
+            color: #e8d5d5;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid rgba(220, 20, 60, 0.3);
+            white-space: pre-wrap;
+            word-break: break-all;
+            user-select: all;
+            cursor: text;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            background: rgba(220, 20, 60, 0.1);
+            padding: 15px 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(220, 20, 60, 0.3);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #dc143c;
+        }
+
+        .download-btn {
+            background: linear-gradient(45deg, #2e7d32, #1b5e20);
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-top: 8px;
+            width: 100%;
+        }
+
+        .download-btn:hover {
+            background: linear-gradient(45deg, #4caf50, #2e7d32);
+            transform: translateY(-1px);
+        }
+
+        .download-btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .image-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .download-progress {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(46, 125, 50, 0.2);
+            border-radius: 8px;
+            border: 1px solid rgba(46, 125, 50, 0.4);
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #4caf50, #2e7d32);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-text {
+            color: #4caf50;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .array-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>JSON Array Editor</h1>
+            <p>You want to use with Facebook Album Scraper</p>
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="loadFromJson()">Load from JSON</button>
+            <button class="btn" onclick="exportJson()">Export JSON</button>
+            <button class="btn btn-secondary" onclick="removeDuplicates()">Remove Duplicates</button>
+            <button class="btn btn-secondary" onclick="downloadAllImages()">Download All Images (ZIP)</button>
+            <button class="btn btn-secondary" onclick="clearAll()">Clear All</button>
+        </div>
+
+        <textarea class="json-input" id="jsonInput" placeholder="Paste your JSON array here..."></textarea>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-number" id="itemCount">0</div>
+                <div class="stat-label">Items</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="imageCount">0</div>
+                <div class="stat-label">Images</div>
+            </div>
+        </div>
+
+        <div class="download-progress" id="downloadProgress">
+            <div class="progress-text" id="progressText">Preparing download...</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <div class="array-grid" id="arrayGrid"></div>
+
+        <!-- Image Popup -->
+        <div class="image-popup" id="imagePopup">
+            <div class="popup-content">
+                <img class="popup-image" id="popupImage" src="" alt="Popup Image">
+                <button class="popup-nav popup-prev" onclick="previousImage()">‹</button>
+                <button class="popup-nav popup-next" onclick="nextImage()">›</button>
+                <button class="popup-close" onclick="closePopup()">×</button>
+                <div class="popup-info" id="popupInfo">Image 1 of 1</div>
+            </div>
+        </div>
+
+        <div class="output-section">
+            <h3>Generated JSON Output</h3>
+            <div class="json-output" id="jsonOutput"></div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script>
+        let arrayData = [];
+        let currentImageIndex = 0;
+        let imageUrls = [];
+
+        function loadFromJson() {
+            const input = document.getElementById('jsonInput').value.trim();
+            if (!input) {
+                alert('Please enter JSON data first');
+                return;
+            }
+
+            try {
+                arrayData = JSON.parse(input);
+                if (!Array.isArray(arrayData)) {
+                    throw new Error('Input must be an array');
+                }
+                renderArray();
+                updateStats();
+                updateOutput();
+                updateImageUrls();
+            } catch (error) {
+                alert('Invalid JSON format: ' + error.message);
+            }
+        }
+
+        function updateImageUrls() {
+            imageUrls = [];
+            arrayData.forEach((item, index) => {
+                if (Array.isArray(item) && item.length >= 2 && item[1] === 'image' && item[0]) {
+                    imageUrls.push({
+                        url: item[0],
+                        index: index
+                    });
+                }
+            });
+        }
+
+        function removeDuplicates() {
+            const seen = new Set();
+            const unique = [];
+            
+            arrayData.forEach(item => {
+                const key = JSON.stringify(item);
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    unique.push(item);
+                }
+            });
+            
+            const removedCount = arrayData.length - unique.length;
+            arrayData = unique;
+            
+            renderArray();
+            updateStats();
+            updateOutput();
+            updateImageUrls();
+            
+            if (removedCount > 0) {
+                alert(`Removed ${removedCount} duplicate item(s)`);
+            } else {
+                alert('No duplicates found');
+            }
+        }
+
+        function renderArray() {
+            const grid = document.getElementById('arrayGrid');
+            grid.innerHTML = '';
+
+            // Add new item button at the top (only if there are no items)
+            if (arrayData.length === 0) {
+                const addBtn = document.createElement('div');
+                addBtn.className = 'add-item-btn';
+                addBtn.onclick = addNewItem;
+                addBtn.innerHTML = `
+                    <span style="font-size: 1.5rem; color: #dc143c;">+</span>
+                    <span style="color: #ff6b9d; font-weight: 600;">Add New Item</span>
+                `;
+                grid.appendChild(addBtn);
+            }
+
+            arrayData.forEach((item, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'array-item';
+                
+                const isImage = Array.isArray(item) && item.length >= 2 && item[1] === 'image';
+                
+                itemDiv.innerHTML = `
+                    <div class="item-header">
+                        <span class="item-index">Item ${index + 1}</span>
+                        <button class="delete-btn" onclick="deleteItem(${index})">Delete</button>
+                    </div>
+                    
+                    <div class="field-group">
+                        <label class="field-label">URL/Link</label>
+                        <input type="text" class="field-input" value="${Array.isArray(item) ? (item[0] || '') : item}" 
+                               onchange="updateItem(${index}, 0, this.value)">
+                        ${isImage && item[0] ? `
+                            <img class="preview-image" src="${item[0]}" onerror="this.style.display='none'" alt="Preview" onclick="openImagePopup('${item[0]}')">
+                            <div class="image-actions">
+                                <button class="download-btn" onclick="downloadSingleImage('${item[0]}', ${index})">📥 Download Image</button>
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="field-group">
+                        <label class="field-label">Type</label>
+                        <input type="text" class="field-input" value="${Array.isArray(item) && item.length > 1 ? item[1] : ''}" 
+                               onchange="updateItem(${index}, 1, this.value)">
+                    </div>
+                    
+                    <div class="field-group">
+                        <label class="field-label">Reference URL</label>
+                        <input type="text" class="field-input" value="${Array.isArray(item) && item.length > 2 ? item[2] : ''}" 
+                               onchange="updateItem(${index}, 2, this.value)">
+                    </div>
+                `;
+                
+                grid.appendChild(itemDiv);
+            });
+
+            // Add new item button at the end (if there are items)
+            if (arrayData.length > 0) {
+                const addItemAtEnd = document.createElement('div');
+                addItemAtEnd.className = 'add-item';
+                addItemAtEnd.onclick = addNewItem;
+                addItemAtEnd.innerHTML = `
+                    <div class="add-icon">+</div>
+                    <div class="add-text">Add New Item</div>
+                `;
+                grid.appendChild(addItemAtEnd);
+            }
+        }
+
+        function openImagePopup(imageUrl) {
+            updateImageUrls();
+            const imageIndex = imageUrls.findIndex(img => img.url === imageUrl);
+            if (imageIndex !== -1) {
+                currentImageIndex = imageIndex;
+                showImage();
+                document.getElementById('imagePopup').classList.add('active');
+            }
+        }
+
+        function showImage() {
+            if (imageUrls.length === 0) return;
+            
+            const popup = document.getElementById('popupImage');
+            const info = document.getElementById('popupInfo');
+            
+            popup.src = imageUrls[currentImageIndex].url;
+            info.textContent = `Image ${currentImageIndex + 1} of ${imageUrls.length}`;
+        }
+
+        function previousImage() {
+            if (imageUrls.length === 0) return;
+            currentImageIndex = (currentImageIndex - 1 + imageUrls.length) % imageUrls.length;
+            showImage();
+        }
+
+        function nextImage() {
+            if (imageUrls.length === 0) return;
+            currentImageIndex = (currentImageIndex + 1) % imageUrls.length;
+            showImage();
+        }
+
+        function closePopup() {
+            document.getElementById('imagePopup').classList.remove('active');
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            const popup = document.getElementById('imagePopup');
+            if (popup.classList.contains('active')) {
+                if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    previousImage();
+                } else if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    nextImage();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    closePopup();
+                }
+            }
+        });
+
+        // Close popup when clicking outside
+        document.getElementById('imagePopup').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePopup();
+            }
+        });
+
+        function updateItem(index, field, value) {
+            if (!Array.isArray(arrayData[index])) {
+                arrayData[index] = ['', '', ''];
+            }
+            
+            while (arrayData[index].length <= field) {
+                arrayData[index].push('');
+            }
+            
+            arrayData[index][field] = value;
+            updateOutput();
+            updateStats();
+            updateImageUrls();
+            
+            // Re-render to update image previews
+            if (field === 0 || field === 1) {
+                renderArray();
+            }
+        }
+
+        function deleteItem(index) {
+            if (confirm('Are you sure you want to delete this item?')) {
+                arrayData.splice(index, 1);
+                renderArray();
+                updateOutput();
+                updateStats();
+                updateImageUrls();
+            }
+        }
+
+        function addNewItem() {
+            arrayData.push(['', 'image', '']);
+            renderArray();
+            updateOutput();
+            updateStats();
+            updateImageUrls();
+        }
+
+        function clearAll() {
+            if (confirm('Are you sure you want to clear all items?')) {
+                arrayData = [];
+                renderArray();
+                updateOutput();
+                updateStats();
+                updateImageUrls();
+            }
+        }
+
+        function exportJson() {
+            const output = JSON.stringify(arrayData, null, 2);
+            navigator.clipboard.writeText(output).then(() => {
+                alert('JSON copied to clipboard!');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = output;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('JSON copied to clipboard!');
+            });
+        }
+
+        function updateOutput() {
+            const output = document.getElementById('jsonOutput');
+            output.textContent = JSON.stringify(arrayData, null, 2);
+        }
+
+        function updateStats() {
+            const itemCount = document.getElementById('itemCount');
+            const imageCount = document.getElementById('imageCount');
+            
+            itemCount.textContent = arrayData.length;
+            
+            const images = arrayData.filter(item => 
+                Array.isArray(item) && item.length > 1 && item[1] === 'image'
+            ).length;
+            imageCount.textContent = images;
+        }
+
+        // Download functions
+        function getFileExtensionFromMimeType(mimeType) {
+            const mimeToExt = {
+                'image/jpeg': 'jpg',
+                'image/jpg': 'jpg',
+                'image/png': 'png',
+                'image/gif': 'gif',
+                'image/webp': 'webp',
+                'image/bmp': 'bmp',
+                'image/svg+xml': 'svg',
+                'image/tiff': 'tiff',
+                'image/ico': 'ico',
+                'image/icon': 'ico',
+                'image/x-icon': 'ico'
+            };
+            return mimeToExt[mimeType] || 'jpg';
+        }
+
+        function getFileExtensionFromUrl(url) {
+            try {
+                // Remove query parameters and fragments
+                const cleanUrl = url.split('?')[0].split('#')[0];
+                
+                // Get the last part after the last slash
+                const fileName = cleanUrl.split('/').pop();
+                
+                // Check if it has an extension
+                const parts = fileName.split('.');
+                if (parts.length > 1) {
+                    const ext = parts.pop().toLowerCase();
+                    // Common image extensions
+                    const validExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'tiff', 'ico'];
+                    if (validExts.includes(ext)) {
+                        return ext === 'jpeg' ? 'jpg' : ext;
+                    }
+                }
+            } catch (e) {
+                console.log('Error parsing URL for extension:', e);
+            }
+            return null;
+        }
+
+        async function downloadSingleImage(imageUrl, index) {
+            try {
+                const response = await fetch(imageUrl, { mode: 'cors' });
+                if (!response.ok) throw new Error('Failed to fetch image');
+                
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                
+                // Try to get extension from multiple sources
+                let extension = getFileExtensionFromUrl(imageUrl);
+                if (!extension) {
+                    extension = getFileExtensionFromMimeType(blob.type);
+                }
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `image_${index + 1}.${extension}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Error downloading image:', error);
+                alert('Failed to download image. The image might not be accessible due to CORS restrictions.');
+            }
+        }
+
+        async function downloadAllImages() {
+            const images = arrayData.filter(item => 
+                Array.isArray(item) && item.length >= 2 && item[1] === 'image' && item[0]
+            );
+            
+            if (images.length === 0) {
+                alert('No images found to download');
+                return;
+            }
+
+            const progressEl = document.getElementById('downloadProgress');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            
+            progressEl.style.display = 'block';
+            progressText.textContent = 'Preparing download...';
+            progressFill.style.width = '0%';
+
+            // Prevent tab from being discarded
+            let wakeLock = null;
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                } catch (err) {
+                    console.log('Wake lock failed:', err);
+                }
+            }
+
+            // Show notification to keep tab active
+            const originalTitle = document.title;
+            let titleBlinking = true;
+            const titleInterval = setInterval(() => {
+                document.title = titleBlinking ? '🔄 Downloading Images...' : originalTitle;
+                titleBlinking = !titleBlinking;
+            }, 1000);
+
+            try {
+                const zip = new JSZip();
+                let successCount = 0;
+                let failCount = 0;
+                
+                // Use Promise.allSettled for better concurrency but limit concurrent downloads
+                const BATCH_SIZE = 3; // Download 3 images at a time
+                
+                for (let i = 0; i < images.length; i += BATCH_SIZE) {
+                    const batch = images.slice(i, i + BATCH_SIZE);
+                    
+                    const batchPromises = batch.map(async (imageData, batchIndex) => {
+                        const actualIndex = i + batchIndex;
+                        const imageUrl = imageData[0];
+                        
+                        try {
+                            // Update progress
+                            const progress = (actualIndex / images.length) * 100;
+                            progressText.textContent = `Downloading image ${actualIndex + 1} of ${images.length}...`;
+                            progressFill.style.width = progress + '%';
+                            
+                            // Use XMLHttpRequest for better background support
+                            const blob = await downloadImageWithXHR(imageUrl);
+                            
+                            // Try to get extension from multiple sources
+                            let extension = getFileExtensionFromUrl(imageUrl);
+                            if (!extension) {
+                                extension = getFileExtensionFromMimeType(blob.type);
+                            }
+                            
+                            zip.file(`image_${actualIndex + 1}.${extension}`, blob);
+                            successCount++;
+                            
+                        } catch (error) {
+                            console.error(`Failed to download image ${actualIndex + 1}:`, error);
+                            failCount++;
+                            
+                            // Add a text file with the failed URL
+                            zip.file(`failed_image_${actualIndex + 1}.txt`, `Failed to download: ${imageUrl}\nError: ${error.message}`);
+                        }
+                    });
+                    
+                    // Wait for current batch to complete before starting next batch
+                    await Promise.allSettled(batchPromises);
+                    
+                    // Small delay between batches
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                }
+
+                progressText.textContent = 'Creating ZIP file...';
+                progressFill.style.width = '100%';
+
+                const zipBlob = await zip.generateAsync({ 
+                    type: 'blob',
+                    compression: 'DEFLATE',
+                    compressionOptions: { level: 6 }
+                });
+                
+                const url = URL.createObjectURL(zipBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `facebook_album_images_${new Date().toISOString().split('T')[0]}.zip`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                progressText.textContent = `✅ Download complete! ${successCount} images downloaded${failCount > 0 ? `, ${failCount} failed` : ''}`;
+                
+                // Show success notification
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('Download Complete!', {
+                        body: `${successCount} images downloaded successfully`,
+                        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">✅</text></svg>'
+                    });
+                }
+                
+                setTimeout(() => {
+                    progressEl.style.display = 'none';
+                }, 5000);
+
+                if (failCount > 0) {
+                    alert(`Download completed with ${failCount} failures. Check the ZIP file for error details.`);
+                }
+
+            } catch (error) {
+                console.error('Error creating ZIP:', error);
+                progressText.textContent = '❌ Download failed!';
+                alert('Failed to create ZIP file: ' + error.message);
+                
+                setTimeout(() => {
+                    progressEl.style.display = 'none';
+                }, 3000);
+            } finally {
+                // Cleanup
+                clearInterval(titleInterval);
+                document.title = originalTitle;
+                
+                if (wakeLock) {
+                    wakeLock.release();
+                }
+            }
+        }
+
+        // Helper function to download with XMLHttpRequest for better background support
+        function downloadImageWithXHR(url) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', url, true);
+                xhr.responseType = 'blob';
+                xhr.timeout = 30000; // 30 second timeout
+                
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        resolve(xhr.response);
+                    } else {
+                        reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
+                    }
+                };
+                
+                xhr.onerror = function() {
+                    reject(new Error('Network error'));
+                };
+                
+                xhr.ontimeout = function() {
+                    reject(new Error('Request timeout'));
+                };
+                
+                xhr.send();
+            });
+        }
+
+        // Request notification permission on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            arrayData = [];
+            renderArray();
+            updateStats();
+            updateOutput();
+            updateImageUrls();
+            
+            // Request notification permission
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        });
+    </script>
+</body>
+</html>
