@@ -475,18 +475,167 @@
             font-weight: 600;
         }
 
+        /* Drag and Drop Overlay Styles */
+        .drag-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(15px);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .drag-overlay.active {
+            display: flex;
+            opacity: 1;
+            animation: dragPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes dragPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .drag-content {
+            text-align: center;
+            color: white;
+            transform: translateY(50px);
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .drag-overlay.active .drag-content {
+            transform: translateY(0);
+        }
+
+        .drag-icon {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 30px;
+            background: linear-gradient(135deg, #ff6b9d, #dc143c);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.5rem;
+            animation: bounce 1.5s ease-in-out infinite;
+            box-shadow: 0 20px 40px rgba(220, 20, 60, 0.4);
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .drag-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            background: linear-gradient(45deg, #ff6b9d, #dc143c, #8b0000);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            background-size: 200% 200%;
+            animation: gradientShift 3s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .drag-subtitle {
+            font-size: 1.3rem;
+            color: #e8d5d5;
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+
+        .drag-hint {
+            font-size: 1rem;
+            color: #b8a5a5;
+            padding: 15px 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            border: 2px dashed rgba(220, 20, 60, 0.5);
+            display: inline-block;
+            animation: borderPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes borderPulse {
+            0%, 100% { border-color: rgba(220, 20, 60, 0.5); }
+            50% { border-color: rgba(220, 20, 60, 0.8); }
+        }
+
+        .sparkles {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        .sparkle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #ff6b9d;
+            border-radius: 50%;
+            animation: sparkle 2s ease-in-out infinite;
+        }
+
+        .sparkle:nth-child(1) { top: -80px; left: -60px; animation-delay: 0s; }
+        .sparkle:nth-child(2) { top: -60px; right: -80px; animation-delay: 0.3s; }
+        .sparkle:nth-child(3) { bottom: -80px; left: -40px; animation-delay: 0.6s; }
+        .sparkle:nth-child(4) { bottom: -60px; right: -60px; animation-delay: 0.9s; }
+        .sparkle:nth-child(5) { top: -100px; left: 20px; animation-delay: 1.2s; }
+        .sparkle:nth-child(6) { bottom: -100px; right: 20px; animation-delay: 1.5s; }
+
+        @keyframes sparkle {
+            0%, 100% { 
+                opacity: 0; 
+                transform: scale(0) rotate(0deg);
+            }
+            50% { 
+                opacity: 1; 
+                transform: scale(1) rotate(180deg);
+            }
+        }
+
         @media (max-width: 768px) {
             .array-grid {
                 grid-template-columns: 1fr;
             }
-            
+
             .controls {
                 flex-direction: column;
                 align-items: center;
             }
-            
+
             .header h1 {
                 font-size: 2rem;
+            }
+
+            .drag-title {
+                font-size: 2rem;
+            }
+
+            .drag-subtitle {
+                font-size: 1.1rem;
+            }
+
+            .drag-icon {
+                width: 100px;
+                height: 100px;
+                font-size: 3rem;
             }
         }
     </style>
@@ -504,6 +653,8 @@
             <button class="btn btn-secondary" onclick="removeDuplicates()">Remove Duplicates</button>
             <button class="btn btn-secondary" onclick="downloadAllImages()">Download All Images (ZIP)</button>
             <button class="btn btn-secondary" onclick="clearAll()">Clear All</button>
+            <button class="btn" id="uploadJsonBtn" onclick="document.getElementById('jsonFileInput').click()">Upload JSON File</button>
+            <input type="file" id="jsonFileInput" accept="application/json,.json" style="display:none" />
         </div>
 
         <textarea class="json-input" id="jsonInput" placeholder="Paste your JSON array here..."></textarea>
@@ -539,6 +690,24 @@
             </div>
         </div>
 
+        <!-- Drag and Drop Overlay -->
+        <div class="drag-overlay" id="dragOverlay">
+            <div class="drag-content">
+                <div class="drag-icon">📁</div>
+                <div class="drag-title">Drop Your JSON File!</div>
+                <div class="drag-subtitle">Release to upload your Facebook album data</div>
+                <div class="drag-hint">✨ .json files only ✨</div>
+                <div class="sparkles">
+                    <div class="sparkle"></div>
+                    <div class="sparkle"></div>
+                    <div class="sparkle"></div>
+                    <div class="sparkle"></div>
+                    <div class="sparkle"></div>
+                    <div class="sparkle"></div>
+                </div>
+            </div>
+        </div>
+
         <div class="output-section">
             <h3>Generated JSON Output</h3>
             <div class="json-output" id="jsonOutput"></div>
@@ -550,6 +719,7 @@
         let arrayData = [];
         let currentImageIndex = 0;
         let imageUrls = [];
+        let dragCounter = 0;
 
         function loadFromJson() {
             const input = document.getElementById('jsonInput').value.trim();
@@ -587,7 +757,7 @@
         function removeDuplicates() {
             const seen = new Set();
             const unique = [];
-            
+
             arrayData.forEach(item => {
                 const key = JSON.stringify(item);
                 if (!seen.has(key)) {
@@ -595,15 +765,15 @@
                     unique.push(item);
                 }
             });
-            
+
             const removedCount = arrayData.length - unique.length;
             arrayData = unique;
-            
+
             renderArray();
             updateStats();
             updateOutput();
             updateImageUrls();
-            
+
             if (removedCount > 0) {
                 alert(`Removed ${removedCount} duplicate item(s)`);
             } else {
@@ -615,7 +785,6 @@
             const grid = document.getElementById('arrayGrid');
             grid.innerHTML = '';
 
-            // Add new item button at the top (only if there are no items)
             if (arrayData.length === 0) {
                 const addBtn = document.createElement('div');
                 addBtn.className = 'add-item-btn';
@@ -630,15 +799,15 @@
             arrayData.forEach((item, index) => {
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'array-item';
-                
+
                 const isImage = Array.isArray(item) && item.length >= 2 && item[1] === 'image';
-                
+
                 itemDiv.innerHTML = `
                     <div class="item-header">
                         <span class="item-index">Item ${index + 1}</span>
                         <button class="delete-btn" onclick="deleteItem(${index})">Delete</button>
                     </div>
-                    
+
                     <div class="field-group">
                         <label class="field-label">URL/Link</label>
                         <input type="text" class="field-input" value="${Array.isArray(item) ? (item[0] || '') : item}" 
@@ -650,24 +819,23 @@
                             </div>
                         ` : ''}
                     </div>
-                    
+
                     <div class="field-group">
                         <label class="field-label">Type</label>
                         <input type="text" class="field-input" value="${Array.isArray(item) && item.length > 1 ? item[1] : ''}" 
                                onchange="updateItem(${index}, 1, this.value)">
                     </div>
-                    
+
                     <div class="field-group">
                         <label class="field-label">Reference URL</label>
                         <input type="text" class="field-input" value="${Array.isArray(item) && item.length > 2 ? item[2] : ''}" 
                                onchange="updateItem(${index}, 2, this.value)">
                     </div>
                 `;
-                
+
                 grid.appendChild(itemDiv);
             });
 
-            // Add new item button at the end (if there are items)
             if (arrayData.length > 0) {
                 const addItemAtEnd = document.createElement('div');
                 addItemAtEnd.className = 'add-item';
@@ -692,10 +860,10 @@
 
         function showImage() {
             if (imageUrls.length === 0) return;
-            
+
             const popup = document.getElementById('popupImage');
             const info = document.getElementById('popupInfo');
-            
+
             popup.src = imageUrls[currentImageIndex].url;
             info.textContent = `Image ${currentImageIndex + 1} of ${imageUrls.length}`;
         }
@@ -716,7 +884,6 @@
             document.getElementById('imagePopup').classList.remove('active');
         }
 
-        // Keyboard navigation
         document.addEventListener('keydown', function(e) {
             const popup = document.getElementById('imagePopup');
             if (popup.classList.contains('active')) {
@@ -733,7 +900,6 @@
             }
         });
 
-        // Close popup when clicking outside
         document.getElementById('imagePopup').addEventListener('click', function(e) {
             if (e.target === this) {
                 closePopup();
@@ -744,17 +910,16 @@
             if (!Array.isArray(arrayData[index])) {
                 arrayData[index] = ['', '', ''];
             }
-            
+
             while (arrayData[index].length <= field) {
                 arrayData[index].push('');
             }
-            
+
             arrayData[index][field] = value;
             updateOutput();
             updateStats();
             updateImageUrls();
-            
-            // Re-render to update image previews
+
             if (field === 0 || field === 1) {
                 renderArray();
             }
@@ -793,7 +958,6 @@
             navigator.clipboard.writeText(output).then(() => {
                 alert('JSON copied to clipboard!');
             }).catch(() => {
-                // Fallback for older browsers
                 const textArea = document.createElement('textarea');
                 textArea.value = output;
                 document.body.appendChild(textArea);
@@ -812,16 +976,15 @@
         function updateStats() {
             const itemCount = document.getElementById('itemCount');
             const imageCount = document.getElementById('imageCount');
-            
+
             itemCount.textContent = arrayData.length;
-            
+
             const images = arrayData.filter(item => 
                 Array.isArray(item) && item.length > 1 && item[1] === 'image'
             ).length;
             imageCount.textContent = images;
         }
 
-        // Download functions
         function getFileExtensionFromMimeType(mimeType) {
             const mimeToExt = {
                 'image/jpeg': 'jpg',
@@ -841,17 +1004,11 @@
 
         function getFileExtensionFromUrl(url) {
             try {
-                // Remove query parameters and fragments
                 const cleanUrl = url.split('?')[0].split('#')[0];
-                
-                // Get the last part after the last slash
                 const fileName = cleanUrl.split('/').pop();
-                
-                // Check if it has an extension
                 const parts = fileName.split('.');
                 if (parts.length > 1) {
                     const ext = parts.pop().toLowerCase();
-                    // Common image extensions
                     const validExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'tiff', 'ico'];
                     if (validExts.includes(ext)) {
                         return ext === 'jpeg' ? 'jpg' : ext;
@@ -867,16 +1024,15 @@
             try {
                 const response = await fetch(imageUrl, { mode: 'cors' });
                 if (!response.ok) throw new Error('Failed to fetch image');
-                
+
                 const blob = await response.blob();
                 const url = URL.createObjectURL(blob);
-                
-                // Try to get extension from multiple sources
+
                 let extension = getFileExtensionFromUrl(imageUrl);
                 if (!extension) {
                     extension = getFileExtensionFromMimeType(blob.type);
                 }
-                
+
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = `image_${index + 1}.${extension}`;
@@ -894,7 +1050,7 @@
             const images = arrayData.filter(item => 
                 Array.isArray(item) && item.length >= 2 && item[1] === 'image' && item[0]
             );
-            
+
             if (images.length === 0) {
                 alert('No images found to download');
                 return;
@@ -903,12 +1059,11 @@
             const progressEl = document.getElementById('downloadProgress');
             const progressFill = document.getElementById('progressFill');
             const progressText = document.getElementById('progressText');
-            
+
             progressEl.style.display = 'block';
             progressText.textContent = 'Preparing download...';
             progressFill.style.width = '0%';
 
-            // Prevent tab from being discarded
             let wakeLock = null;
             if ('wakeLock' in navigator) {
                 try {
@@ -918,7 +1073,6 @@
                 }
             }
 
-            // Show notification to keep tab active
             const originalTitle = document.title;
             let titleBlinking = true;
             const titleInterval = setInterval(() => {
@@ -930,48 +1084,39 @@
                 const zip = new JSZip();
                 let successCount = 0;
                 let failCount = 0;
-                
-                // Use Promise.allSettled for better concurrency but limit concurrent downloads
-                const BATCH_SIZE = 3; // Download 3 images at a time
-                
+
+                const BATCH_SIZE = 3;
+
                 for (let i = 0; i < images.length; i += BATCH_SIZE) {
                     const batch = images.slice(i, i + BATCH_SIZE);
-                    
+
                     const batchPromises = batch.map(async (imageData, batchIndex) => {
                         const actualIndex = i + batchIndex;
                         const imageUrl = imageData[0];
-                        
+
                         try {
-                            // Update progress
                             const progress = (actualIndex / images.length) * 100;
                             progressText.textContent = `Downloading image ${actualIndex + 1} of ${images.length}...`;
                             progressFill.style.width = progress + '%';
-                            
-                            // Use XMLHttpRequest for better background support
+
                             const blob = await downloadImageWithXHR(imageUrl);
-                            
-                            // Try to get extension from multiple sources
+
                             let extension = getFileExtensionFromUrl(imageUrl);
                             if (!extension) {
                                 extension = getFileExtensionFromMimeType(blob.type);
                             }
-                            
+
                             zip.file(`image_${actualIndex + 1}.${extension}`, blob);
                             successCount++;
-                            
+
                         } catch (error) {
                             console.error(`Failed to download image ${actualIndex + 1}:`, error);
                             failCount++;
-                            
-                            // Add a text file with the failed URL
                             zip.file(`failed_image_${actualIndex + 1}.txt`, `Failed to download: ${imageUrl}\nError: ${error.message}`);
                         }
                     });
-                    
-                    // Wait for current batch to complete before starting next batch
+
                     await Promise.allSettled(batchPromises);
-                    
-                    // Small delay between batches
                     await new Promise(resolve => setTimeout(resolve, 200));
                 }
 
@@ -983,7 +1128,7 @@
                     compression: 'DEFLATE',
                     compressionOptions: { level: 6 }
                 });
-                
+
                 const url = URL.createObjectURL(zipBlob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -994,15 +1139,14 @@
                 URL.revokeObjectURL(url);
 
                 progressText.textContent = `✅ Download complete! ${successCount} images downloaded${failCount > 0 ? `, ${failCount} failed` : ''}`;
-                
-                // Show success notification
+
                 if ('Notification' in window && Notification.permission === 'granted') {
                     new Notification('Download Complete!', {
                         body: `${successCount} images downloaded successfully`,
                         icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">✅</text></svg>'
                     });
                 }
-                
+
                 setTimeout(() => {
                     progressEl.style.display = 'none';
                 }, 5000);
@@ -1015,29 +1159,27 @@
                 console.error('Error creating ZIP:', error);
                 progressText.textContent = '❌ Download failed!';
                 alert('Failed to create ZIP file: ' + error.message);
-                
+
                 setTimeout(() => {
                     progressEl.style.display = 'none';
                 }, 3000);
             } finally {
-                // Cleanup
                 clearInterval(titleInterval);
                 document.title = originalTitle;
-                
+
                 if (wakeLock) {
                     wakeLock.release();
                 }
             }
         }
 
-        // Helper function to download with XMLHttpRequest for better background support
         function downloadImageWithXHR(url) {
             return new Promise((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
                 xhr.open('GET', url, true);
                 xhr.responseType = 'blob';
-                xhr.timeout = 30000; // 30 second timeout
-                
+                xhr.timeout = 30000;
+
                 xhr.onload = function() {
                     if (xhr.status === 200) {
                         resolve(xhr.response);
@@ -1045,31 +1187,199 @@
                         reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
                     }
                 };
-                
+
                 xhr.onerror = function() {
                     reject(new Error('Network error'));
                 };
-                
+
                 xhr.ontimeout = function() {
                     reject(new Error('Request timeout'));
                 };
-                
+
                 xhr.send();
             });
         }
 
-        // Request notification permission on page load
+        // Enhanced drag and drop functionality with cute overlay
+        function showDragOverlay() {
+            const overlay = document.getElementById('dragOverlay');
+            overlay.classList.add('active');
+        }
+
+        function hideDragOverlay() {
+            const overlay = document.getElementById('dragOverlay');
+            overlay.classList.remove('active');
+        }
+
+        function handleJsonFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const json = JSON.parse(event.target.result);
+                    if (!Array.isArray(json)) throw new Error('JSON must be an array');
+                    
+                    // Show a cute success message
+                    const overlay = document.getElementById('dragOverlay');
+                    const content = overlay.querySelector('.drag-content');
+                    content.innerHTML = `
+                        <div class="drag-icon" style="background: linear-gradient(135deg, #4caf50, #2e7d32);">✅</div>
+                        <div class="drag-title" style="color: #4caf50;">Success!</div>
+                        <div class="drag-subtitle">JSON file loaded successfully</div>
+                        <div class="drag-hint" style="border-color: rgba(76, 175, 80, 0.5);">Found ${json.length} items</div>
+                    `;
+                    
+                    setTimeout(() => {
+                        arrayData = json;
+                        renderArray();
+                        updateStats();
+                        updateOutput();
+                        updateImageUrls();
+                        hideDragOverlay();
+                        
+                        // Reset overlay content for next time
+                        setTimeout(() => {
+                            content.innerHTML = `
+                                <div class="drag-icon">📁</div>
+                                <div class="drag-title">Drop Your JSON File!</div>
+                                <div class="drag-subtitle">Release to upload your Facebook album data</div>
+                                <div class="drag-hint">✨ .json files only ✨</div>
+                                <div class="sparkles">
+                                    <div class="sparkle"></div>
+                                    <div class="sparkle"></div>
+                                    <div class="sparkle"></div>
+                                    <div class="sparkle"></div>
+                                    <div class="sparkle"></div>
+                                    <div class="sparkle"></div>
+                                </div>
+                            `;
+                        }, 500);
+                    }, 1500);
+                    
+                } catch (err) {
+                    // Show error in overlay
+                    const overlay = document.getElementById('dragOverlay');
+                    const content = overlay.querySelector('.drag-content');
+                    content.innerHTML = `
+                        <div class="drag-icon" style="background: linear-gradient(135deg, #f44336, #d32f2f);">❌</div>
+                        <div class="drag-title" style="color: #f44336;">Invalid File!</div>
+                        <div class="drag-subtitle">Please upload a valid JSON array file</div>
+                        <div class="drag-hint" style="border-color: rgba(244, 67, 54, 0.5);">Error: ${err.message}</div>
+                    `;
+                    
+                    setTimeout(() => {
+                        hideDragOverlay();
+                        // Reset overlay content
+                        setTimeout(() => {
+                            content.innerHTML = `
+                                <div class="drag-icon">📁</div>
+                                <div class="drag-title">Drop Your JSON File!</div>
+                                <div class="drag-subtitle">Release to upload your Facebook album data</div>
+                                <div class="drag-hint">✨ .json files only ✨</div>
+                                <div class="sparkles">
+                                    <div class="sparkle"></div>
+                                    <div class="sparkle"></div>
+                                    <div class="sparkle"></div>
+                                    <div class="sparkle"></div>
+                                    <div class="sparkle"></div>
+                                    <div class="sparkle"></div>
+                                </div>
+                            `;
+                        }, 500);
+                    }, 2500);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Drag and drop event listeners
+        document.addEventListener('dragenter', function(e) {
+            e.preventDefault();
+            dragCounter++;
+            if (dragCounter === 1) {
+                showDragOverlay();
+            }
+        });
+
+        document.addEventListener('dragover', function(e) {
+            e.preventDefault();
+        });
+
+        document.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            dragCounter--;
+            if (dragCounter === 0) {
+                hideDragOverlay();
+            }
+        });
+
+        document.addEventListener('drop', function(e) {
+            e.preventDefault();
+            dragCounter = 0;
+            
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                const file = e.dataTransfer.files[0];
+                if (file.type === 'application/json' || file.name.endsWith('.json')) {
+                    handleJsonFile(file);
+                } else {
+                    // Show error for invalid file type
+                    const overlay = document.getElementById('dragOverlay');
+                    const content = overlay.querySelector('.drag-content');
+                    content.innerHTML = `
+                        <div class="drag-icon" style="background: linear-gradient(135deg, #ff9800, #f57c00);">⚠️</div>
+                        <div class="drag-title" style="color: #ff9800;">Wrong File Type!</div>
+                        <div class="drag-subtitle">Please upload a .json file only</div>
+                        <div class="drag-hint" style="border-color: rgba(255, 152, 0, 0.5);">Dropped: ${file.name}</div>
+                    `;
+                    
+                    setTimeout(() => {
+                        hideDragOverlay();
+                        // Reset overlay content
+                        setTimeout(() => {
+                            content.innerHTML = `
+                                <div class="drag-icon">📁</div>
+                                <div class="drag-title">Drop Your JSON File!</div>
+                                <div class="drag-subtitle">Release to upload your Facebook album data</div>
+                                <div class="drag-hint">✨ .json files only ✨</div>
+                                <div class="sparkles">
+                                    <div class="sparkle"></div>
+                                    <div class="sparkle"></div>
+                                    <div class="sparkle"></div>
+                                    <div class="sparkle"></div>
+                                    <div class="sparkle"></div>
+                                    <div class="sparkle"></div>
+                                </div>
+                            `;
+                        }, 500);
+                    }, 2500);
+                }
+            } else {
+                hideDragOverlay();
+            }
+        });
+
         document.addEventListener('DOMContentLoaded', function() {
             arrayData = [];
             renderArray();
             updateStats();
             updateOutput();
             updateImageUrls();
-            
-            // Request notification permission
+
             if ('Notification' in window && Notification.permission === 'default') {
                 Notification.requestPermission();
             }
+        });
+
+        document.getElementById('jsonFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            if (file.type === 'application/json' || file.name.endsWith('.json')) {
+                handleJsonFile(file);
+            } else {
+                alert('Please select a valid .json file');
+            }
+            
+            e.target.value = '';
         });
     </script>
 </body>
